@@ -1,0 +1,79 @@
+/// @title NoDelegateCall
+/// @notice SPDX-License-Identifier: MIT
+/// @author  <https://github.com/Uniswap/v3-core/blob/main/contracts/NoDelegateCall.sol>
+/// @author supernovahs.eth <github.com/supernovahs>
+/// @notice NoDelegateCall contract re implemented in Huff language . 
+
+/////// DO NOT USE IN PRODUCTION ! /////////////////////
+
+// storage
+#define constant _ORIGINAL = FREE_STORAGE_POINTER()    
+
+// interfaces
+#define function original() view returns (address)
+#define function checkNotDelegateCall() view returns ()
+#define function noDelegateCall() view returns ()
+
+#define macro CONSTRUCTOR() = takes(0) returns(0) {
+ address [_ORIGINAL] sstore
+}
+
+
+#define macro MAIN() = takes (0) returns (0) {
+    
+    0x00 calldataload 0xE0 shr  // [func sig]
+
+    dup1 __FUNC_SIG(original)   // [original func sig,func sig,func sig]
+    eq                          // [eq result , func sig]
+    original_jump
+    jumpi 
+
+    dup1 __FUNC_SIG(checkNotDelegateCall) 
+    eq 
+    notdelegatecall
+    jumpi
+
+    dup1 __FUNC_SIG(noDelegateCall) 
+    eq
+    modifiercall
+    jumpi
+
+     0x00 0x00 revert
+
+    original_jump: 
+    ORIGINAL()
+
+    notdelegatecall:
+    CHECKNOTDELEGATECALL()
+
+    modifiercall:
+    NO_DELEGATE_CALL_MODIFIER()
+}
+
+
+
+#define macro ORIGINAL() = takes (0) returns (0) {
+    [_ORIGINAL] sload
+    0x00 mstore
+    0x20 0x00 return
+}
+
+#define macro CHECKNOTDELEGATECALL() = takes (0) returns (0) {
+    [_ORIGINAL] sload
+    address
+    eq
+    continue 
+    jumpi
+
+
+   0x00 0x00 revert
+
+
+    continue:
+    
+    
+}
+
+#define macro NO_DELEGATE_CALL_MODIFIER() = takes(0) returns (0) {
+    CHECKNOTDELEGATECALL()
+}
