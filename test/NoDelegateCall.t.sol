@@ -35,6 +35,7 @@ contract NoDelegateCalltest is Test {
 
 
 
+
 }
 
 
