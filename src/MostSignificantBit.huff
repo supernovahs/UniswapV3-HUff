@@ -1,19 +1,21 @@
-
 #include "./libraries/BitMath.huff"
 
 #define function mostSignificantBit(uint) nonpayable returns(uint)
 
 #define macro MAIN() = takes(0) returns(0) {
 
- 0x4 calldataload 
- 0xa 
- eq 
+ 0x00 calldataload
+ 0xe0 
+ shr
+ __FUNC_SIG(mostSignificantBit)
+ eq
  continue
 jumpi
 
 0x00 0x00 revert
 continue:
-0x20
+0x4 calldataload 
+
 MOSTSIGNIFICANTBIT()
 
 }
