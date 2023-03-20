@@ -13,7 +13,8 @@ jumpi
 
 0x00 0x00 revert
 continue:
-
+0x20
 MOSTSIGNIFICANTBIT()
+
 }
 
