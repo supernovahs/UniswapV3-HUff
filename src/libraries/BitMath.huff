@@ -8,27 +8,21 @@
 
 // interfaces
 // #define macro MAIN() = takes(0) returns(0) {
-//     0x20
+//     0x100
 //     MOSTSIGNIFICANTBIT()
 // }
 
 #define macro MOSTSIGNIFICANTBIT() = takes(1) returns(1) {
-    // input                  // [num]
-    0x00                      // [r,num]
-   dup1                      // [num,r,num]
-    0x01                      // [1,num,r,num]
-    swap1                      // [num,1,r,num]
-    lt                        // [num < 1 ,r, num]
-    iszero                    // [num < 1 ? 0 : 1,r,num]
-    INPUT_NOT_ZERO
+             
+    0x04 calldataload           // [num]
+    0x00 dup2                  // [num, 0 , num ] 
+    eq
+    IS_ZERO
     jumpi
 
-    0x00 0x00 revert
-
-    INPUT_NOT_ZERO:
 
     // first iteration
-    
+    0x00                                // [r,num]
     dup2                                // [num,r,num]
     0x100000000000000000000000000000000 // [0x100000000000000000000000000000000,num,r,num]
     swap1                                // [num , 0x100000000000000000000000000000000, r,num]
@@ -50,7 +44,7 @@
     swap1                                     // [r,num >> 128]
     0x80                                     // [ 128,r,num >> 128]
     add                                      // [r+=128, num >> 128]
-
+    dup1 0x00 mstore
     // 2nd iteration 
     dup2                                     // [num,r,num]
     0x10000000000000000                      // [0x10000000000000000,num,r,num]
@@ -73,7 +67,7 @@
     swap1                                     // [ r = 128,((num >> 128) >> 64)]
     0x40                                     // [64,r = 128,((num >> 128) >> 64)]
     add                                      // [r+= 64, ((num >> 128) >> 64)]
-    
+    dup1 0x00 mstore
     // check if its gt than 0x100000000
     dup2                                     // [num,r,num]
     0x100000000                             // [0x100000000,num ,r,num]
@@ -98,7 +92,7 @@
     swap1                                     // [r = 192,num >> 128 >> 64 >> 32]
     0x20                                     // [32, r = 192 , num >> 128 >> 64 >> 32]
     add                                      // [r+= 32,num >> 128 >> 64 >> 32]
-
+    dup1 0x00 mstore
 // check if its greater than 0x10000
 
     dup2                                     // [num,r,num]
@@ -109,7 +103,7 @@
     jumpi
 
     dup2                                     // [num,r,num]
-    0x00                                     // [0x10000, num ,r, num]
+    0x10000                                     // [0x10000, num ,r, num]
     eq                                       // [(num >> 128 >> 64 >> 32)  == 0x10000,r,num]
     FourthGreaterInterval                     
     jumpi
@@ -123,7 +117,7 @@
     swap1                                     // [r=224,num >> 128 >> 64 >> 32 >> 16]
     0x10                                     // [0x10,r=224,num >> 128 >> 64 >> 32 >> 16]
     add                                      // [r+=16,num >> 128 >> 64 >> 32 >> 16]
-
+    dup1 0x00 mstore
 
 // check if its gt than 0x100
 
@@ -149,9 +143,9 @@
     swap1                                     // [r=240,num >> 128 >> 64 >> 32 >> 16 >> 8]
     0x8                                     // [0x8,r=240,num >> 128 >> 64 >> 32 >> 16 >> 8 ]
     add                                      // [r+=8,num >> 128 >> 64 >> 32 >> 16 >>8]
-
-    // check if its greater than 0x10
-    dup2                                     //[num,r,num]
+    dup1 0x00 mstore
+     // check if its greater than 0x10
+     dup2                                     //[num,r,num]
     0x10                                     // [0x10,num,r,num]
     swap1                                     // [num >> 128 >> 64 >> 32 >> 16 >> 8,0x10,r,num]
     gt                                       // [(num >> 128 >> 64 >> 32 >> 16 >> 8) > 0x10 ,r,num]
@@ -172,31 +166,60 @@
     swap1                                     // [r=248,num >> 128 >> 64 >> 32 >> 16 >> 8 >> 4]
     0x4                                      // [0x4, r= 248, num >> 128 >> 64 >> 32 >> 16 >> 8 >>4]
     add                                      // [r+=4,num >> 128 >> 64 >> 32 >> 16 >> 8 >>4]
-    
+    dup1 0x00 mstore
+
+// Check if its gt 0x4 
+     dup2                                     //[num,r,num]
+    0x4                                     // [0x10,num,r,num]
+    swap1                                     // [num >> 128 >> 64 >> 32 >> 16 >> 8,0x10,r,num]
+    gt                                       // [(num >> 128 >> 64 >> 32 >> 16 >> 8) > 0x10 ,r,num]
+    SeventhGreaterInterval                     
+    jumpi
+
+    dup2                                     // [num,r,num]
+    0x4                                     // [0x10, num,r,num]
+    eq                                       // [(num >> 128 >> 64 >> 32 >> 16 >> 8)  == 0x10,num,r,num]
+    SeventhGreaterInterval                     
+    jumpi
+
+// if its gt than 0x10
+    SeventhGreaterInterval:
+    swap1                                     // [num >> 128 >> 64 >> 32 >> 16 >> 8, r = 248]
+    0x2                                      // [0x4, num >> 128 >> 64 >> 32 >> 16 >>8, r=248]
+    shr                                      // [num >> 128 >> 64 >> 32 >> 16 >> 8 >> 4, r=248]
+    swap1                                     // [r=248,num >> 128 >> 64 >> 32 >> 16 >> 8 >> 4]
+    0x2                                      // [0x4, r= 248, num >> 128 >> 64 >> 32 >> 16 >> 8 >>4]
+    add                                      // [r+=4,num >> 128 >> 64 >> 32 >> 16 >> 8 >>4]
+    dup1 0x00 mstore
+
+
 // Check if its gt than 0x2 
 
     dup2                                     // [num,r,num]
     0x2                                      // [0x2,num,rnum]
     swap1                                     // [num >> 128 >> 64 >> 32 >> 16 >> 8 >>4,0x2,r,num]
     gt                                       // [(num >> 128 >> 64 >> 32 >> 16 >> 8 >>4) > 0x2,r,num]
-    SeventhGreaterInterval
+    EightGreaterInterval
     jumpi
 
+   
     dup2                                     // [num,r,num]
     0x2                                     // [0x2,num,r,num]
     eq                                       // [num >> 128 >> 64 >> 32 >> 16 >> 8 >>4 == 0x2,r,num]
-    SeventhGreaterInterval
+    EightGreaterInterval
     jumpi
+    
+ 0x20 0x00 return
 
-
-    SeventhGreaterInterval:
-    swap1                                     // [num >> 128 >> 64 >> 32 >> 16 >> 8 >>4,r=252]
-    swap1                                     // [r=252,num >> 128 >> 64 >> 32 >> 16 >> 8 >>4]
+    EightGreaterInterval:
     0x1                                      // [0x1,r=252,num >> 128 >> 64 >> 32 >> 16 >> 8 >>4]
     add                                      // [r+=1,num >> 128 >> 64 >> 32 >> 16 >> 8 >>4]
+    dup1 0x00 mstore
 
 
+    0x20 0x00 return 
     // return                               // [r]
-   
+    IS_ZERO:
+     0x00 0x00 revert
 
 }

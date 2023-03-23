@@ -4,6 +4,7 @@ pragma solidity ^0.8.15;
 import "foundry-huff/HuffDeployer.sol";
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
+import "lib/v3-core/contracts/libraries/BitMath.sol";
 
 interface MostSignificantBit {
     function mostSignificantBit(uint256 x) external pure returns (uint256);
@@ -20,5 +21,7 @@ contract MSB is Test {
     function testMSB() public view {
         uint a = msb.mostSignificantBit(100);
         console.logUint(a);
+        uint b = BitMath.mostSignificantBit(100);
+        console.logUint(b);
     }
 }
