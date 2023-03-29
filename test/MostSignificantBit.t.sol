@@ -18,10 +18,11 @@ contract MSB is Test {
         msb = MostSignificantBit(HuffDeployer.deploy("MostSignificantBit"));
     }
 
-    function testMSB() public view {
-        uint a = msb.mostSignificantBit(100);
+    function testMSB() public  {
+        uint a = msb.mostSignificantBit(1000000);
         console.logUint(a);
-        uint b = BitMath.mostSignificantBit(100);
+        uint b = BitMath.mostSignificantBit(1000000);
         console.logUint(b);
+        assertEq(a,b);
     }
 }
