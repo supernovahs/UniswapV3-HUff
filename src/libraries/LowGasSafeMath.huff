@@ -1,0 +1,205 @@
+/// @title LowGasSafeMath library 
+/// @author Uniswap <https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/LowGasSafeMath.sol>
+/// @author supernovahs.eth <github.com/supernovahs> 
+/// @notice Huff Implementation of LowGasSafeMath library of Uniswap V3-core 
+
+/////////// DO NOT USE IN PRODUCTION ! ///////////////////
+
+// interface 
+#define function add(uint256,uint256) nonpayable returns(uint256)
+#define function sub(uint256,uint256) nonpayable returns(uint256)
+#define function mul(uint256,uint256) nonpayable returns(uint256)
+#define function add(int256,int256) nonpayable returns(int256)
+#define function sub(int256,int256) nonpayable returns(int256)
+
+#define macro LGSM() = takes(1) returns(0) {
+
+    // Input  [FUNCTION_SELECTOR]
+
+    dup1 __FUNC_SIG(add) eq AddUint jumpi
+
+    dup1 __FUNC_SIG(sub) eq SubUint jumpi
+
+    dup1 __FUNC_SIG(mul) eq MulUint jumpi
+
+    dup1 __FUNC_SIG(add) eq AddInt jumpi
+
+    dup1 __FUNC_SIG(sub) eq SubInt jumpi
+
+    no_match
+    jump
+
+    AddUint:
+    pop
+
+
+    SubUint:
+    pop
+
+    MulUint:
+    pop
+
+    AddInt:
+    pop
+
+    SubInt:
+    pop
+
+    no_match:
+
+
+}
+
+
+#define macro ADD_UINT()= takes(2) returns(1) {
+    // Input  [x] [y]
+     dup1           // x, x, y 
+    swap2           // y,x,x 
+    add             // x+y , x  
+    dup1            // x+y, x+y, x
+    swap2          // x, x+y, x+y           
+    gt 
+    iszero
+    continue
+    jumpi
+    
+    0x00 0x00 revert
+    
+    continue:
+    0x00 mstore       // 0x00,x+y
+    0x20 0x00  return 
+}
+
+#define macro SUB_UINT()= takes(2) returns(1) {
+    // Input  [x] [y]
+     dup1           // x, x, y 
+    swap2           // y,x,x 
+    swap1           // x,y,x
+    sub             // x-y , x  
+    dup1           // x-y, x-y, x
+    swap2          // x, x-y, x-y
+    swap1          // x-y , x , x-y
+    gt              // x-y > x , x-y
+    iszero
+    continue
+    jumpi
+    
+    0x00 0x00 revert
+    
+    continue:
+    0x00 mstore
+    0x20 0x00 return
+}
+
+#define macro MUL_UINT()= takes(2) returns(1) {
+    // Input [x] [y]
+    dup1            // x, x, y
+    swap2           // y,x,x
+    dup1           // y,y,x,x
+    swap2           // x,y,y,x
+    mul             // x*y ,y, x
+    dup1           // x*y, x*y,y, x
+    swap3          // x, x*y, y,x*y
+    swap1          // x*y , x ,y, x*y
+    dup2           // x , x*y, x ,y, x*y
+    0x00            // x==0 ,x, x*y, x, y , x*y
+    swap2           // x*y, x , x==0, x,y,x*y           
+    div             // x*y/x ,x==0,x,y, x*y
+    dup4            // y, x*y/x ,x==0,x,y, x*y
+    eq             // x*y/x == y ,x==0,x,y, x*y
+    or 
+    continue
+    jumpi
+
+    0x00 0x00 revert 
+
+    continue:
+    swap2 
+    0x00 mstore
+    0x20 0x00 return 
+
+}
+
+#define macro ADD_INT()= takes(2) returns(1) {
+    // Input [x] [y]
+    dup1           // x, x, y
+    dup3           // y,x,x,y
+    add            // x+y,x,y
+    dup1           // x+y,x+y,x,y
+    swap2          // x , x+y ,x+y,y
+    gt             // x>(x+y) ,x+y,y 
+    swap2          // y,x+y, x> (x+y)
+    0x00           // 0x00 ,y, x+y , x > (x+y)
+    swap1          // y,0x00 , x+y, x > (x+y)
+    lt             // y < 0x00 , x+y,x > (x+y)
+    dup1           // y < 0x00, y < 0x00 ,x+y, x> (x+y)
+    dup4           // x > (x+y), y < 0x00, y < 0x00 ,x+y, x > (x+y)
+    or             // or , y < 0x00 ,x+y, x > (x+y)
+    swap3          // x > (x+y), y < 0x00 , x+y, or 
+    and            // x > (x+y) && y < 0x00 ,x+y , or
+    
+    0x1
+    eq
+    continue
+    jumpi
+
+    swap1
+    0x00
+    eq
+    continue2
+    jumpi
+
+    0x00 0x00 revert
+    continue:
+    0x00 mstore
+    pop
+    0x20 0x00 return
+
+    continue2:
+    0x00 mstore
+    0x20 0x00 return
+
+}
+
+#define macro SUB_INT()= takes(2) returns(1) {
+    // Input [x] [y]
+
+    dup1           // x, x, y
+    dup3           // y,x,x,y
+    swap1          // x , y ,x ,y
+    sub            // x-y,x,y
+    dup1           // x-y,x-y,x,y
+    swap2          // x , x-y ,x-y,y
+    lt            // x < (x-y) ,x-y,y
+    swap2          // y , x-y , x< x-y 
+    0x00          // 0x00 ,y, x-y , x < (x-y)
+    swap1         // y,0x00 , x-y, x < (x-y)
+    lt            // y < 0x00 , x-y,x < (x-y)
+    swap1         // x-y , y < 0x00 , x < (x-y)
+    swap2         // x < (x-y) , y < 0x00 , x-y
+    dup1          // x < (x-y) , x < (x-y), y < 0x00 , x-y
+    dup3          // y < 0x00 ,x < (x-y) , x < (x-y), y < 0x00 , x-y
+    and           // y < 0x00 && x <  (x-y), x < (x-y),y < 0x00 , x-y
+    continue
+    jumpi 
+
+    or 
+    iszero
+    continue2
+    jumpi
+
+0x00 0x00 revert
+
+    continue:
+
+    pop
+    pop
+    0x00 mstore
+    0x20 0x00 return 
+
+    continue2:
+    0x00 mstore
+    0x20 0x00 return
+
+}
+
